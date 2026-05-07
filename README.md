@@ -18,6 +18,14 @@ Create a lambda function called `getProductsById` under the same AWS CDK Stack f
 - The response from the lambda should be 1 searched product from an array of products (mock data should be used - this mock data should be stored in Product Service).
 - This endpoint is not needed to be integrated with Frontend right now.
 
+### Swagger Documentation
+
+OpenAPI 3.0 documentation for the Product Service API is available in [`openapi.yaml`](./openapi.yaml).
+
+To view it, open [https://editor.swagger.io/](https://editor.swagger.io/) and import the file via **File → Import file**.
+
+---
+
 ### Task 3.3
 
 Commit all your work to separate branch (e.g. `task-3` from the latest master) in your own repository.
