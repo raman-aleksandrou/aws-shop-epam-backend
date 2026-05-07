@@ -33,3 +33,20 @@ Commit all your work to separate branch (e.g. `task-3` from the latest master) i
 Create a pull request to the master branch.
 
 Submit link to the pull request to Crosscheck page in RS App.
+
+
+Task 4.1
+1.  Use AWS Console to create two database tables in DynamoDB. Expected schemas for products and stocks:
+Product model:
+
+  products:
+    id -  uuid (Primary key)
+    title - text, not null
+    description - text
+    price - integer
+Stock model:
+
+  stocks:
+    product_id - uuid (Foreign key from products.id)
+    count - integer (Total number of products in stock, can't be exceeded)
+2. Write a script to fill tables with test examples. Store it in your Github repository. Execute it for your DB to fill data.
