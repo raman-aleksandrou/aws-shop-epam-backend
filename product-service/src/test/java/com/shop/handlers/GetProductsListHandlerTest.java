@@ -1,6 +1,7 @@
 package com.shop.handlers;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -38,6 +39,7 @@ class GetProductsListHandlerTest {
         when(repository.getAll()).thenReturn(MOCK_PRODUCTS);
         handler = new GetProductsListHandler(repository);
         context = mock(Context.class);
+        when(context.getLogger()).thenReturn(mock(LambdaLogger.class));
     }
 
     @Test

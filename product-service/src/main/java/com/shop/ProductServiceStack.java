@@ -50,10 +50,22 @@ public class ProductServiceStack extends Stack {
             .environment(env)
             .build();
 
+        Function createProduct = Function.Builder.create(this, "CreateProductFunction")
+            .functionName("createProduct")
+            .runtime(Runtime.JAVA_17)
+            .handler("com.shop.handlers.CreateProductHandler::handleRequest")
+            .code(Code.fromAsset("target/product-service.jar"))
+            .memorySize(512)
+            .timeout(Duration.seconds(15))
+            .environment(env)
+            .build();
+
         productsTable.grantReadData(getProductsList);
         stocksTable.grantReadData(getProductsList);
         productsTable.grantReadData(getProductsById);
         stocksTable.grantReadData(getProductsById);
+        productsTable.grantWriteData(createProduct);
+        stocksTable.grantWriteData(createProduct);
 
         RestApi api = RestApi.Builder.create(this, "ProductServiceApi")
             .restApiName("Product Service API")
@@ -62,6 +74,7 @@ public class ProductServiceStack extends Stack {
 
         var productsResource = api.getRoot().addResource("products");
         productsResource.addMethod("GET", new LambdaIntegration(getProductsList));
+        productsResource.addMethod("POST", new LambdaIntegration(createProduct));
         productsResource.addResource("{productId}")
             .addMethod("GET", new LambdaIntegration(getProductsById));
     }

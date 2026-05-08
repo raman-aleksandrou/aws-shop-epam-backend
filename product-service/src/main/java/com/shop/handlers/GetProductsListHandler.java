@@ -33,6 +33,7 @@ public class GetProductsListHandler
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent request, Context context) {
+        context.getLogger().log("Incoming request: GET /products");
         try {
             List<Product> products = repository.getAll();
             String body = MAPPER.writeValueAsString(products);
@@ -41,6 +42,7 @@ public class GetProductsListHandler
                 .withHeaders(HEADERS)
                 .withBody(body);
         } catch (Exception e) {
+            context.getLogger().log("ERROR getProductsList: " + e.getMessage());
             return new APIGatewayProxyResponseEvent()
                 .withStatusCode(500)
                 .withHeaders(HEADERS)

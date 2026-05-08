@@ -32,6 +32,7 @@ public class GetProductsByIdHandler
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent request, Context context) {
+        context.getLogger().log("Incoming request: GET /products/{productId}, pathParameters: " + request.getPathParameters());
         try {
             Map<String, String> pathParams = request.getPathParameters();
             String productId = pathParams != null ? pathParams.get("productId") : null;
@@ -57,6 +58,7 @@ public class GetProductsByIdHandler
                 .withHeaders(HEADERS)
                 .withBody(MAPPER.writeValueAsString(product));
         } catch (Exception e) {
+            context.getLogger().log("ERROR getProductsById: " + e.getMessage());
             return new APIGatewayProxyResponseEvent()
                 .withStatusCode(500)
                 .withHeaders(HEADERS)

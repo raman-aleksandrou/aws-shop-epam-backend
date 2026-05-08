@@ -1,6 +1,7 @@
 package com.shop.handlers;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,6 +39,7 @@ class GetProductsByIdHandlerTest {
         when(repository.getById("999")).thenReturn(null);
         handler = new GetProductsByIdHandler(repository);
         context = mock(Context.class);
+        when(context.getLogger()).thenReturn(mock(LambdaLogger.class));
     }
 
     private APIGatewayProxyRequestEvent requestWithId(String productId) {
