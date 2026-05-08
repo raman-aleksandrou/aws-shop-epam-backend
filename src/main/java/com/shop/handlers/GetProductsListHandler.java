@@ -5,7 +5,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.shop.data.MockProducts;
+import com.shop.repository.DynamoDbProductRepository;
+import com.shop.repository.ProductRepository;
 import com.shop.model.Product;
 
 import java.util.List;
@@ -20,10 +21,20 @@ public class GetProductsListHandler
         "Access-Control-Allow-Origin", "*"
     );
 
+    private final ProductRepository repository;
+
+    public GetProductsListHandler() {
+        this(new DynamoDbProductRepository());
+    }
+
+    GetProductsListHandler(ProductRepository repository) {
+        this.repository = repository;
+    }
+
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent request, Context context) {
         try {
-            List<Product> products = MockProducts.getAll();
+            List<Product> products = repository.getAll();
             String body = MAPPER.writeValueAsString(products);
             return new APIGatewayProxyResponseEvent()
                 .withStatusCode(200)

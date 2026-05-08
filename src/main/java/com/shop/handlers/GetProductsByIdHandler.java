@@ -5,7 +5,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.shop.data.MockProducts;
+import com.shop.repository.DynamoDbProductRepository;
+import com.shop.repository.ProductRepository;
 import com.shop.model.Product;
 
 import java.util.Map;
@@ -18,6 +19,16 @@ public class GetProductsByIdHandler
         "Content-Type", "application/json",
         "Access-Control-Allow-Origin", "*"
     );
+
+    private final ProductRepository repository;
+
+    public GetProductsByIdHandler() {
+        this(new DynamoDbProductRepository());
+    }
+
+    GetProductsByIdHandler(ProductRepository repository) {
+        this.repository = repository;
+    }
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent request, Context context) {
@@ -32,7 +43,7 @@ public class GetProductsByIdHandler
                     .withBody("{\"message\":\"productId is required\"}");
             }
 
-            Product product = MockProducts.getById(productId);
+            Product product = repository.getById(productId);
 
             if (product == null) {
                 return new APIGatewayProxyResponseEvent()
