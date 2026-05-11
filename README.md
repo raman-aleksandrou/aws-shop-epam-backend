@@ -117,3 +117,14 @@ Response will be with id and with 201 Status:
 ✅  All lambdas return error 500 status code on any error (DB connection, any unhandled error in code)
 ✅  All lambdas do console.log for each incoming requests and their arguments
 ✅  Transaction based creation of product (in case stock creation is failed then related to this stock product is not created and not ready to be used by the end user and vice versa)
+
+### Task 5.1 ✅  
+
+- Create a new service called import-service at the same level as Product Service with its own AWS CDK Stack. The backend project structure should look like this:
+   backend-repository
+      product-service
+      import-service
+- In the AWS Console create and configure a new S3 bucket with a folder called uploaded.
+- s3://aws-shop-epam-import-service/uploaded/
+- arn:aws:s3:::aws-shop-epam-import-service/uploaded/
+![alt text](image.png)
