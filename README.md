@@ -128,3 +128,18 @@ Response will be with id and with 201 Status:
 - s3://aws-shop-epam-import-service/uploaded/
 - arn:aws:s3:::aws-shop-epam-import-service/uploaded/
 ![alt text](image.png)
+
+### Task 5.2 ✅ 
+- Create a lambda function called importProductsFile under the Import Service which will be triggered by the HTTP GET method.
+- The requested URL should be /import.
+
+https://6g3uxcq0d6.execute-api.eu-central-1.amazonaws.com/prod/import
+
+- Implement its logic so it will be expecting a request with a name of CSV file with products and creating a new Signed URL with the following key: uploaded/${fileName}.
+- The name will be passed in a query string as a name parameter and should be described in the AWS CDK Stack as a request parameter.
+- Update AWS CDK Stack with policies to allow lambda functions to interact with S3.
+- The response from the lambda should be clean Signed URL, as a string.
+- The lambda endpoint should be integrated with the frontend by updating import property of the API paths configuration.
+#### Updated for product and import and created PR:
+https://github.com/raman-aleksandrou/nodejs-aws-shop-react/pull/2
+
