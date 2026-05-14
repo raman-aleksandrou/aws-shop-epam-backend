@@ -5,7 +5,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.shop.data.MockProducts;
+import com.shop.repository.DynamoDbProductRepository;
+import com.shop.repository.ProductRepository;
 import com.shop.model.Product;
 
 import java.util.Map;
@@ -19,8 +20,19 @@ public class GetProductsByIdHandler
         "Access-Control-Allow-Origin", "*"
     );
 
+    private final ProductRepository repository;
+
+    public GetProductsByIdHandler() {
+        this(new DynamoDbProductRepository());
+    }
+
+    GetProductsByIdHandler(ProductRepository repository) {
+        this.repository = repository;
+    }
+
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent request, Context context) {
+        context.getLogger().log("Incoming request: GET /products/{productId}, pathParameters: " + request.getPathParameters());
         try {
             Map<String, String> pathParams = request.getPathParameters();
             String productId = pathParams != null ? pathParams.get("productId") : null;
@@ -32,7 +44,7 @@ public class GetProductsByIdHandler
                     .withBody("{\"message\":\"productId is required\"}");
             }
 
-            Product product = MockProducts.getById(productId);
+            Product product = repository.getById(productId);
 
             if (product == null) {
                 return new APIGatewayProxyResponseEvent()
@@ -46,6 +58,7 @@ public class GetProductsByIdHandler
                 .withHeaders(HEADERS)
                 .withBody(MAPPER.writeValueAsString(product));
         } catch (Exception e) {
+            context.getLogger().log("ERROR getProductsById: " + e.getMessage());
             return new APIGatewayProxyResponseEvent()
                 .withStatusCode(500)
                 .withHeaders(HEADERS)

@@ -1,4 +1,4 @@
-package com.shop.data;
+package com.shop.repository;
 
 import com.shop.model.Product;
 
@@ -22,7 +22,7 @@ public class MockProducts {
 
     public static Product getById(String id) {
         return PRODUCTS.stream()
-            .filter(p -> p.getId().equals(id))
+            .filter(p -> p.id().equals(id))
             .findFirst()
             .orElse(null);
     }
