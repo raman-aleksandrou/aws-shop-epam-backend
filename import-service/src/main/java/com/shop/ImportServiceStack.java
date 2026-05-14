@@ -47,6 +47,28 @@ public class ImportServiceStack extends Stack {
             .resources(List.of(importBucket.arnForObjects(UPLOADED_FOLDER + "/*")))
             .build());
 
+        Function importFileParser = Function.Builder.create(this, "ImportFileParserFunction")
+            .functionName("importFileParser")
+            .runtime(Runtime.JAVA_17)
+            .handler("com.shop.handlers.ImportFileParserHandler::handleRequest")
+            .code(Code.fromAsset("target/import-service.jar"))
+            .memorySize(512)
+            .timeout(Duration.seconds(30))
+            .build();
+
+        importFileParser.addToRolePolicy(PolicyStatement.Builder.create()
+            .actions(List.of("s3:GetObject"))
+            .resources(List.of(importBucket.arnForObjects(UPLOADED_FOLDER + "/*")))
+            .build());
+
+        // Grant S3 permission to invoke the lambda (needed for S3 event notifications)
+        importFileParser.addPermission("S3InvokePermission",
+            software.amazon.awscdk.services.lambda.Permission.builder()
+                .principal(new software.amazon.awscdk.services.iam.ServicePrincipal("s3.amazonaws.com"))
+                .action("lambda:InvokeFunction")
+                .sourceArn(importBucket.getBucketArn())
+                .build());
+
         RestApi api = RestApi.Builder.create(this, "ImportServiceApi")
             .restApiName("Import Service API")
             .description("Import Service REST API")

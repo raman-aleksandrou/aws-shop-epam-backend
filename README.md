@@ -127,7 +127,7 @@ Response will be with id and with 201 Status:
 - In the AWS Console create and configure a new S3 bucket with a folder called uploaded.
 - s3://aws-shop-epam-import-service/uploaded/
 - arn:aws:s3:::aws-shop-epam-import-service/uploaded/
-![alt text](image.png)
+![alt text](image-1.png)
 
 ### Task 5.2 ✅ 
 - Create a lambda function called importProductsFile under the Import Service which will be triggered by the HTTP GET method.
@@ -143,3 +143,12 @@ https://6g3uxcq0d6.execute-api.eu-central-1.amazonaws.com/prod/import
 #### Updated for product and import and created PR:
 https://github.com/raman-aleksandrou/nodejs-aws-shop-react/pull/2
 
+### Task 5.3 ✅ 
+- Create a lambda function called importFileParser under the Import Service which will be triggered by an S3 event.
+- The event should be s3:ObjectCreated:*
+- Configure the event to be fired only by changes in the uploaded folder in S3.
+- The lambda function should use a readable stream to get an object from S3, parse it using csv-parser package and log each record to be shown in CloudWatch.
+#### It was tested by adding file(test-products.csv) to bucket and checking logs
+- aws s3 cp D:\AWS-Developer-EPAM\aws-shop-epam-backend\import-service\test-products.csv s3://aws-shop-epam-import-service/uploaded/test-products.csv
+- aws logs tail /aws/lambda/importFileParser --follow
+![alt text](image.png)
