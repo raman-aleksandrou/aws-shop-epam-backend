@@ -118,6 +118,8 @@ Response will be with id and with 201 Status:
 ✅  All lambdas do console.log for each incoming requests and their arguments
 ✅  Transaction based creation of product (in case stock creation is failed then related to this stock product is not created and not ready to be used by the end user and vice versa)
 
+FE-link: https://d20yrfgj13ai1q.cloudfront.net/
+
 ### Task 5.1 ✅  
 
 - Create a new service called import-service at the same level as Product Service with its own AWS CDK Stack. The backend project structure should look like this:
@@ -152,3 +154,17 @@ https://github.com/raman-aleksandrou/nodejs-aws-shop-react/pull/2
 - aws s3 cp D:\AWS-Developer-EPAM\aws-shop-epam-backend\import-service\test-products.csv s3://aws-shop-epam-import-service/uploaded/test-products.csv
 - aws logs tail /aws/lambda/importFileParser --follow
 ![alt text](image.png)
+
+### Additional features
+✅  importProductsFile lambda is covered by unit tests. You should consider to mock S3 and other AWS SDK methods so not trigger actual AWS services while unit testing.
+✅  importFileParser lambda is covered by unit tests.
+✅  At the end of the stream the lambda function should move the file from the uploaded folder into the parsed folder (move the file means that file should be copied into a new folder in the same bucket called parsed, and then deleted from uploaded folder)
+Before(no files were imported and no folder for it):
+![alt text](image-2.png)
+After adding folder was ctreacted and lamda was triggered:
+![alt text](image-3.png)
+![alt text](image-7.png)
+Upload is empty:
+![alt text](image-4.png)
+Parsed contains this file:
+![alt text](image-5.png)
