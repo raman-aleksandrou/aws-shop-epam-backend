@@ -188,3 +188,14 @@ Tested by importing from FE https://d20yrfgj13ai1q.cloudfront.net/admin/products
 ![alt text](image-12.png)
 ![alt text](image-13.png)
 ![alt text](image-14.png)
+
+### Task 6.3
+- Create an SNS topic createProductTopic and email subscription in the AWS CDK Stack of the Product Service.
+![alt text](image-15.png)
+- Create a subscription for this SNS topic with an email endpoint type with your own email in there.
+![alt text](image-16.png)
+- Update the catalogBatchProcess lambda function in the Product Service to send an event to the SNS topic once it creates products.
+Tested by sending new product and checking email.
+![alt text](image-17.png)
+![alt text](image-18.png)
+![alt text](image-19.png)

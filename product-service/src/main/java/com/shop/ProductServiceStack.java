@@ -11,6 +11,8 @@ import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
+import software.amazon.awscdk.services.sns.Topic;
+import software.amazon.awscdk.services.sns.subscriptions.EmailSubscription;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -73,6 +75,12 @@ public class ProductServiceStack extends Stack {
             .queueName("catalogItemsQueue")
             .build();
 
+        Topic createProductTopic = Topic.Builder.create(this, "CreateProductTopic")
+            .topicName("createProductTopic")
+            .build();
+
+        createProductTopic.addSubscription(new EmailSubscription("raman.aleksandrou@gmail.com"));
+
         Function catalogBatchProcess = Function.Builder.create(this, "CatalogBatchProcessFunction")
             .functionName("catalogBatchProcess")
             .runtime(Runtime.JAVA_17)
@@ -80,11 +88,16 @@ public class ProductServiceStack extends Stack {
             .code(Code.fromAsset("target/product-service.jar"))
             .memorySize(512)
             .timeout(Duration.seconds(15))
-            .environment(env)
+            .environment(Map.of(
+                "PRODUCTS_TABLE_NAME", PRODUCTS_TABLE_NAME,
+                "STOCKS_TABLE_NAME", STOCKS_TABLE_NAME,
+                "SNS_TOPIC_ARN", createProductTopic.getTopicArn()
+            ))
             .build();
 
         productsTable.grantWriteData(catalogBatchProcess);
         stocksTable.grantWriteData(catalogBatchProcess);
+        createProductTopic.grantPublish(catalogBatchProcess);
 
         catalogBatchProcess.addEventSource(SqsEventSource.Builder.create(catalogItemsQueue)
             .batchSize(5)

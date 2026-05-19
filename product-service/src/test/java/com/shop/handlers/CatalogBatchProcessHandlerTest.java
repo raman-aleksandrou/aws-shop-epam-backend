@@ -7,9 +7,14 @@ import com.shop.model.Product;
 import com.shop.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.PublishRequest;
+import software.amazon.awssdk.services.sns.model.PublishResponse;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -17,6 +22,7 @@ class CatalogBatchProcessHandlerTest {
 
     private CatalogBatchProcessHandler handler;
     private ProductRepository repository;
+    private SnsClient snsClient;
     private Context context;
 
     @BeforeEach
@@ -26,7 +32,10 @@ class CatalogBatchProcessHandlerTest {
             Product p = inv.getArgument(0);
             return new Product("generated-uuid", p.title(), p.description(), p.price(), p.count());
         });
-        handler = new CatalogBatchProcessHandler(repository);
+        snsClient = mock(SnsClient.class);
+        when(snsClient.publish(any(PublishRequest.class)))
+            .thenReturn(PublishResponse.builder().messageId("msg-id").build());
+        handler = new CatalogBatchProcessHandler(repository, snsClient);
         context = mock(Context.class);
         when(context.getLogger()).thenReturn(mock(LambdaLogger.class));
     }
@@ -54,6 +63,34 @@ class CatalogBatchProcessHandlerTest {
     }
 
     @Test
+    void publishesToSnsForEachCreatedProduct() {
+        SQSEvent event = sqsEvent(
+            "{\"title\":\"Product A\",\"price\":10.0,\"count\":5}",
+            "{\"title\":\"Product B\",\"price\":20.0,\"count\":3}"
+        );
+
+        handler.handleRequest(event, context);
+
+        verify(snsClient, times(2)).publish(any(PublishRequest.class));
+    }
+
+    @Test
+    void snsMessageContainsProductDetails() {
+        SQSEvent event = sqsEvent(
+            "{\"title\":\"My Product\",\"description\":\"Desc\",\"price\":49.99,\"count\":10}"
+        );
+
+        handler.handleRequest(event, context);
+
+        ArgumentCaptor<PublishRequest> captor = ArgumentCaptor.forClass(PublishRequest.class);
+        verify(snsClient).publish(captor.capture());
+        String message = captor.getValue().message();
+        assertTrue(message.contains("My Product"));
+        assertTrue(message.contains("generated-uuid"));
+        assertEquals("New Product Created", captor.getValue().subject());
+    }
+
+    @Test
     void createsProductWithCorrectFields() {
         SQSEvent event = sqsEvent(
             "{\"title\":\"My Product\",\"description\":\"Desc\",\"price\":49.99,\"count\":10}"
@@ -77,42 +114,37 @@ class CatalogBatchProcessHandlerTest {
 
     @Test
     void skipsMessageWithMissingTitle() {
-        SQSEvent event = sqsEvent(
-            "{\"price\":10.0,\"count\":1}"
-        );
+        SQSEvent event = sqsEvent("{\"price\":10.0,\"count\":1}");
 
         handler.handleRequest(event, context);
 
         verify(repository, never()).create(any());
+        verify(snsClient, never()).publish(any(PublishRequest.class));
     }
 
     @Test
     void skipsMessageWithBlankTitle() {
-        SQSEvent event = sqsEvent(
-            "{\"title\":\"  \",\"price\":10.0,\"count\":1}"
-        );
+        SQSEvent event = sqsEvent("{\"title\":\"  \",\"price\":10.0,\"count\":1}");
 
         handler.handleRequest(event, context);
 
         verify(repository, never()).create(any());
+        verify(snsClient, never()).publish(any(PublishRequest.class));
     }
 
     @Test
     void skipsMessageWithZeroPrice() {
-        SQSEvent event = sqsEvent(
-            "{\"title\":\"T\",\"price\":0,\"count\":1}"
-        );
+        SQSEvent event = sqsEvent("{\"title\":\"T\",\"price\":0,\"count\":1}");
 
         handler.handleRequest(event, context);
 
         verify(repository, never()).create(any());
+        verify(snsClient, never()).publish(any(PublishRequest.class));
     }
 
     @Test
     void skipsMessageWithNegativePrice() {
-        SQSEvent event = sqsEvent(
-            "{\"title\":\"T\",\"price\":-5.0,\"count\":1}"
-        );
+        SQSEvent event = sqsEvent("{\"title\":\"T\",\"price\":-5.0,\"count\":1}");
 
         handler.handleRequest(event, context);
 
@@ -121,9 +153,7 @@ class CatalogBatchProcessHandlerTest {
 
     @Test
     void skipsMessageWithNegativeCount() {
-        SQSEvent event = sqsEvent(
-            "{\"title\":\"T\",\"price\":10.0,\"count\":-1}"
-        );
+        SQSEvent event = sqsEvent("{\"title\":\"T\",\"price\":10.0,\"count\":-1}");
 
         handler.handleRequest(event, context);
 
@@ -137,6 +167,7 @@ class CatalogBatchProcessHandlerTest {
         handler.handleRequest(event, context);
 
         verify(repository, never()).create(any());
+        verify(snsClient, never()).publish(any(PublishRequest.class));
     }
 
     @Test
@@ -150,6 +181,7 @@ class CatalogBatchProcessHandlerTest {
         handler.handleRequest(event, context);
 
         verify(repository, times(2)).create(any());
+        verify(snsClient, times(2)).publish(any(PublishRequest.class));
     }
 
     @Test
@@ -158,7 +190,7 @@ class CatalogBatchProcessHandlerTest {
 
         Void result = handler.handleRequest(event, context);
 
-        org.junit.jupiter.api.Assertions.assertNull(result);
+        assertNull(result);
     }
 
     @Test
@@ -169,6 +201,7 @@ class CatalogBatchProcessHandlerTest {
         handler.handleRequest(event, context);
 
         verify(repository, never()).create(any());
+        verify(snsClient, never()).publish(any(PublishRequest.class));
     }
 
     @Test

@@ -8,24 +8,31 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shop.model.Product;
 import com.shop.repository.DynamoDbProductRepository;
 import com.shop.repository.ProductRepository;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.PublishRequest;
 
 public class CatalogBatchProcessHandler implements RequestHandler<SQSEvent, Void> {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final String SNS_TOPIC_ARN_ENV = "SNS_TOPIC_ARN";
 
     private final ProductRepository repository;
+    private final SnsClient snsClient;
 
     public CatalogBatchProcessHandler() {
-        this(new DynamoDbProductRepository());
+        this(new DynamoDbProductRepository(), SnsClient.create());
     }
 
-    CatalogBatchProcessHandler(ProductRepository repository) {
+    CatalogBatchProcessHandler(ProductRepository repository, SnsClient snsClient) {
         this.repository = repository;
+        this.snsClient = snsClient;
     }
 
     @Override
     public Void handleRequest(SQSEvent event, Context context) {
         context.getLogger().log("catalogBatchProcess triggered with " + event.getRecords().size() + " messages");
+
+        String topicArn = System.getenv(SNS_TOPIC_ARN_ENV);
 
         for (SQSEvent.SQSMessage message : event.getRecords()) {
             String body = message.getBody();
@@ -56,6 +63,16 @@ public class CatalogBatchProcessHandler implements RequestHandler<SQSEvent, Void
 
                 Product created = repository.create(input);
                 context.getLogger().log("Created product: " + created.id() + " - " + created.title());
+
+                snsClient.publish(PublishRequest.builder()
+                    .topicArn(topicArn)
+                    .subject("New Product Created")
+                    .message("Product created: " + created.title()
+                        + "\nId: " + created.id()
+                        + "\nPrice: " + created.price()
+                        + "\nCount: " + created.count()
+                        + "\nDescription: " + created.description())
+                    .build());
             } catch (Exception e) {
                 context.getLogger().log("ERROR processing message: " + e.getMessage() + " | body: " + body);
             }
