@@ -68,6 +68,12 @@
             <artifactId>url-connection-client</artifactId>
         </dependency>
 
+        <!-- AWS SDK v2 SQS -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
+        </dependency>
+
         <!-- CSV parsing -->
         <dependency>
             <groupId>org.apache.commons</groupId>

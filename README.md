@@ -179,3 +179,12 @@ Parsed contains this file:
 ![alt text](image-9.png)
 ![alt text](image-10.png)
 ![alt text](image-11.png)
+
+### Task 6.2 ✅
+
+- Update the importFileParser lambda function in the Import Service to send each CSV record into SQS.
+- It should no longer log entries from the readable stream to CloudWatch.
+Tested by importing from FE https://d20yrfgj13ai1q.cloudfront.net/admin/products
+![alt text](image-12.png)
+![alt text](image-13.png)
+![alt text](image-14.png)
