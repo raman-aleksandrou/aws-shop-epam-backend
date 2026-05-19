@@ -10,6 +10,8 @@ import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
+import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
+import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import java.util.Map;
@@ -66,6 +68,27 @@ public class ProductServiceStack extends Stack {
         stocksTable.grantReadData(getProductsById);
         productsTable.grantWriteData(createProduct);
         stocksTable.grantWriteData(createProduct);
+
+        Queue catalogItemsQueue = Queue.Builder.create(this, "CatalogItemsQueue")
+            .queueName("catalogItemsQueue")
+            .build();
+
+        Function catalogBatchProcess = Function.Builder.create(this, "CatalogBatchProcessFunction")
+            .functionName("catalogBatchProcess")
+            .runtime(Runtime.JAVA_17)
+            .handler("com.shop.handlers.CatalogBatchProcessHandler::handleRequest")
+            .code(Code.fromAsset("target/product-service.jar"))
+            .memorySize(512)
+            .timeout(Duration.seconds(15))
+            .environment(env)
+            .build();
+
+        productsTable.grantWriteData(catalogBatchProcess);
+        stocksTable.grantWriteData(catalogBatchProcess);
+
+        catalogBatchProcess.addEventSource(SqsEventSource.Builder.create(catalogItemsQueue)
+            .batchSize(5)
+            .build());
 
         RestApi api = RestApi.Builder.create(this, "ProductServiceApi")
             .restApiName("Product Service API")

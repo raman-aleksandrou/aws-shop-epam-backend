@@ -168,3 +168,14 @@ Upload is empty:
 ![alt text](image-4.png)
 Parsed contains this file:
 ![alt text](image-5.png)
+
+### Task 6.1 ✅ 
+- Create a lambda function called catalogBatchProcess under the Product Service which will be triggered by an SQS event.
+![alt text](image-8.png)
+- Create an SQS queue called catalogItemsQueue, in the AWS CDK Stack.
+![alt text](image-6.png)
+- Configure the SQS to trigger lambda catalogBatchProcess with 5 messages at once via batchSize property.
+- The lambda function should iterate over all SQS messages and create corresponding products in the products table.
+![alt text](image-9.png)
+![alt text](image-10.png)
+![alt text](image-11.png)
