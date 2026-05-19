@@ -75,6 +75,22 @@ class CatalogBatchProcessHandlerTest {
     }
 
     @Test
+    void snsPublishIncludesPriceMessageAttribute() {
+        SQSEvent event = sqsEvent(
+            "{\"title\":\"My Product\",\"price\":49.99,\"count\":10}"
+        );
+
+        handler.handleRequest(event, context);
+
+        ArgumentCaptor<PublishRequest> captor = ArgumentCaptor.forClass(PublishRequest.class);
+        verify(snsClient).publish(captor.capture());
+        var priceAttr = captor.getValue().messageAttributes().get("price");
+        assertNotNull(priceAttr);
+        assertEquals("Number", priceAttr.dataType());
+        assertEquals("49.99", priceAttr.stringValue());
+    }
+
+    @Test
     void snsMessageContainsProductDetails() {
         SQSEvent event = sqsEvent(
             "{\"title\":\"My Product\",\"description\":\"Desc\",\"price\":49.99,\"count\":10}"

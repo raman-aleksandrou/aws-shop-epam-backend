@@ -11,8 +11,11 @@ import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
+import software.amazon.awscdk.services.sns.NumericConditions;
+import software.amazon.awscdk.services.sns.SubscriptionFilter;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sns.subscriptions.EmailSubscription;
+import software.amazon.awscdk.services.sns.subscriptions.EmailSubscriptionProps;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -79,7 +82,25 @@ public class ProductServiceStack extends Stack {
             .topicName("createProductTopic")
             .build();
 
-        createProductTopic.addSubscription(new EmailSubscription("raman.aleksandrou@gmail.com"));
+        // Premium products (price >= 100)
+        createProductTopic.addSubscription(new EmailSubscription("raman.aleksandrou@gmail.com",
+            EmailSubscriptionProps.builder()
+                .filterPolicy(Map.of(
+                    "price", SubscriptionFilter.numericFilter(NumericConditions.builder()
+                        .greaterThanOrEqualTo(100)
+                        .build())
+                ))
+                .build()));
+
+        // Budget products (price < 100)
+        createProductTopic.addSubscription(new EmailSubscription("roman.aleksandrov1@yandex.by",
+            EmailSubscriptionProps.builder()
+                .filterPolicy(Map.of(
+                    "price", SubscriptionFilter.numericFilter(NumericConditions.builder()
+                        .lessThan(100)
+                        .build())
+                ))
+                .build()));
 
         Function catalogBatchProcess = Function.Builder.create(this, "CatalogBatchProcessFunction")
             .functionName("catalogBatchProcess")

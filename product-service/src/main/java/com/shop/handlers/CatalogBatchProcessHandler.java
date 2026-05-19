@@ -9,7 +9,10 @@ import com.shop.model.Product;
 import com.shop.repository.DynamoDbProductRepository;
 import com.shop.repository.ProductRepository;
 import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
+
+import java.util.Map;
 
 public class CatalogBatchProcessHandler implements RequestHandler<SQSEvent, Void> {
 
@@ -72,6 +75,12 @@ public class CatalogBatchProcessHandler implements RequestHandler<SQSEvent, Void
                         + "\nPrice: " + created.price()
                         + "\nCount: " + created.count()
                         + "\nDescription: " + created.description())
+                    .messageAttributes(Map.of(
+                        "price", MessageAttributeValue.builder()
+                            .dataType("Number")
+                            .stringValue(String.valueOf(created.price()))
+                            .build()
+                    ))
                     .build());
             } catch (Exception e) {
                 context.getLogger().log("ERROR processing message: " + e.getMessage() + " | body: " + body);

@@ -189,7 +189,7 @@ Tested by importing from FE https://d20yrfgj13ai1q.cloudfront.net/admin/products
 ![alt text](image-13.png)
 ![alt text](image-14.png)
 
-### Task 6.3
+### Task 6.3 ✅
 - Create an SNS topic createProductTopic and email subscription in the AWS CDK Stack of the Product Service.
 ![alt text](image-15.png)
 - Create a subscription for this SNS topic with an email endpoint type with your own email in there.
@@ -199,3 +199,16 @@ Tested by sending new product and checking email.
 ![alt text](image-17.png)
 ![alt text](image-18.png)
 ![alt text](image-19.png)
+
+#### Additional (optional) tasks
+✅ catalogBatchProcess lambda is covered by unit tests
+✅ set a Filter Policy for SNS createProductTopic in AWS CDK Stack and create an additional email subscription to distribute messages to different emails depending on the filter for any product attribute
+![alt text](image-20.png)
+ Filter policy setup:
+  ┌──────────────┬────────────────────────────────────┬──────────────┐
+  │ Subscription │               Email                │    Filter    │
+  ├──────────────┼────────────────────────────────────┼──────────────┤
+  │ Premium      │ raman.aleksandrou@gmail.com        │ price >= 100 │
+  ├──────────────┼────────────────────────────────────┼──────────────┤
+  │ Budget       │ roman.aleksandrov1@yandex.by       │ price < 100  │
+  └──────────────┴────────────────────────────────────┴──────────────┘
