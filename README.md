@@ -117,3 +117,54 @@ Response will be with id and with 201 Status:
 ✅  All lambdas return error 500 status code on any error (DB connection, any unhandled error in code)
 ✅  All lambdas do console.log for each incoming requests and their arguments
 ✅  Transaction based creation of product (in case stock creation is failed then related to this stock product is not created and not ready to be used by the end user and vice versa)
+
+FE-link: https://d20yrfgj13ai1q.cloudfront.net/
+
+### Task 5.1 ✅  
+
+- Create a new service called import-service at the same level as Product Service with its own AWS CDK Stack. The backend project structure should look like this:
+   backend-repository
+      product-service
+      import-service
+- In the AWS Console create and configure a new S3 bucket with a folder called uploaded.
+- s3://aws-shop-epam-import-service/uploaded/
+- arn:aws:s3:::aws-shop-epam-import-service/uploaded/
+![alt text](image-1.png)
+
+### Task 5.2 ✅ 
+- Create a lambda function called importProductsFile under the Import Service which will be triggered by the HTTP GET method.
+- The requested URL should be /import.
+
+https://6g3uxcq0d6.execute-api.eu-central-1.amazonaws.com/prod/import
+
+- Implement its logic so it will be expecting a request with a name of CSV file with products and creating a new Signed URL with the following key: uploaded/${fileName}.
+- The name will be passed in a query string as a name parameter and should be described in the AWS CDK Stack as a request parameter.
+- Update AWS CDK Stack with policies to allow lambda functions to interact with S3.
+- The response from the lambda should be clean Signed URL, as a string.
+- The lambda endpoint should be integrated with the frontend by updating import property of the API paths configuration.
+#### Updated for product and import and created PR:
+https://github.com/raman-aleksandrou/nodejs-aws-shop-react/pull/2
+
+### Task 5.3 ✅ 
+- Create a lambda function called importFileParser under the Import Service which will be triggered by an S3 event.
+- The event should be s3:ObjectCreated:*
+- Configure the event to be fired only by changes in the uploaded folder in S3.
+- The lambda function should use a readable stream to get an object from S3, parse it using csv-parser package and log each record to be shown in CloudWatch.
+#### It was tested by adding file(test-products.csv) to bucket and checking logs
+- aws s3 cp D:\AWS-Developer-EPAM\aws-shop-epam-backend\import-service\test-products.csv s3://aws-shop-epam-import-service/uploaded/test-products.csv
+- aws logs tail /aws/lambda/importFileParser --follow
+![alt text](image.png)
+
+### Additional features
+✅  importProductsFile lambda is covered by unit tests. You should consider to mock S3 and other AWS SDK methods so not trigger actual AWS services while unit testing.
+✅  importFileParser lambda is covered by unit tests.
+✅  At the end of the stream the lambda function should move the file from the uploaded folder into the parsed folder (move the file means that file should be copied into a new folder in the same bucket called parsed, and then deleted from uploaded folder)
+Before(no files were imported and no folder for it):
+![alt text](image-2.png)
+After adding folder was ctreacted and lamda was triggered:
+![alt text](image-3.png)
+![alt text](image-7.png)
+Upload is empty:
+![alt text](image-4.png)
+Parsed contains this file:
+![alt text](image-5.png)
