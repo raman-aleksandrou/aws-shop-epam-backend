@@ -129,7 +129,7 @@ FE-link: https://d20yrfgj13ai1q.cloudfront.net/
 - In the AWS Console create and configure a new S3 bucket with a folder called uploaded.
 - s3://aws-shop-epam-import-service/uploaded/
 - arn:aws:s3:::aws-shop-epam-import-service/uploaded/
-![alt text](image-1.png)
+![alt text](pics/image-1.png)
 
 ### Task 5.2 ✅ 
 - Create a lambda function called importProductsFile under the Import Service which will be triggered by the HTTP GET method.
@@ -153,57 +153,57 @@ https://github.com/raman-aleksandrou/nodejs-aws-shop-react/pull/2
 #### It was tested by adding file(test-products.csv) to bucket and checking logs
 - aws s3 cp D:\AWS-Developer-EPAM\aws-shop-epam-backend\import-service\test-products.csv s3://aws-shop-epam-import-service/uploaded/test-products.csv
 - aws logs tail /aws/lambda/importFileParser --follow
-![alt text](image.png)
+![alt text](pics/image.png)
 
 ### Additional features
 ✅  importProductsFile lambda is covered by unit tests. You should consider to mock S3 and other AWS SDK methods so not trigger actual AWS services while unit testing.
 ✅  importFileParser lambda is covered by unit tests.
 ✅  At the end of the stream the lambda function should move the file from the uploaded folder into the parsed folder (move the file means that file should be copied into a new folder in the same bucket called parsed, and then deleted from uploaded folder)
 Before(no files were imported and no folder for it):
-![alt text](image-2.png)
+![alt text](pics/image-2.png)
 After adding folder was ctreacted and lamda was triggered:
-![alt text](image-3.png)
-![alt text](image-7.png)
+![alt text](pics/image-3.png)
+![alt text](pics/image-7.png)
 Upload is empty:
-![alt text](image-4.png)
+![alt text](pics/image-4.png)
 Parsed contains this file:
-![alt text](image-5.png)
+![alt text](pics/image-5.png)
 
 ### Task 6.1 ✅ 
 - Create a lambda function called catalogBatchProcess under the Product Service which will be triggered by an SQS event.
-![alt text](image-8.png)
+![alt text](pics/image-8.png)
 - Create an SQS queue called catalogItemsQueue, in the AWS CDK Stack.
-![alt text](image-6.png)
+![alt text](pics/image-6.png)
 - Configure the SQS to trigger lambda catalogBatchProcess with 5 messages at once via batchSize property.
 - The lambda function should iterate over all SQS messages and create corresponding products in the products table.
-![alt text](image-9.png)
-![alt text](image-10.png)
-![alt text](image-11.png)
+![alt text](pics/image-9.png)
+![alt text](pics/image-10.png)
+![alt text](pics/image-11.png)
 
 ### Task 6.2 ✅
 
 - Update the importFileParser lambda function in the Import Service to send each CSV record into SQS.
 - It should no longer log entries from the readable stream to CloudWatch.
 Tested by importing from FE https://d20yrfgj13ai1q.cloudfront.net/admin/products
-![alt text](image-12.png)
-![alt text](image-13.png)
-![alt text](image-14.png)
+![alt text](pics/image-12.png)
+![alt text](pics/image-13.png)
+![alt text](pics/image-14.png)
 
 ### Task 6.3 ✅
 - Create an SNS topic createProductTopic and email subscription in the AWS CDK Stack of the Product Service.
-![alt text](image-15.png)
+![alt text](pics/image-15.png)
 - Create a subscription for this SNS topic with an email endpoint type with your own email in there.
-![alt text](image-16.png)
+![alt text](pics/image-16.png)
 - Update the catalogBatchProcess lambda function in the Product Service to send an event to the SNS topic once it creates products.
 Tested by sending new product and checking email.
-![alt text](image-17.png)
-![alt text](image-18.png)
-![alt text](image-19.png)
+![alt text](pics/image-17.png)
+![alt text](pics/image-18.png)
+![alt text](pics/image-19.png)
 
 #### Additional (optional) tasks
 ✅ catalogBatchProcess lambda is covered by unit tests
 ✅ set a Filter Policy for SNS createProductTopic in AWS CDK Stack and create an additional email subscription to distribute messages to different emails depending on the filter for any product attribute
-![alt text](image-20.png)
+![alt text](pics/image-20.png)
  Filter policy setup:
   ┌──────────────┬────────────────────────────────────┬──────────────┐
   │ Subscription │               Email                │    Filter    │
