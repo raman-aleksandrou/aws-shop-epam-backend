@@ -1,4 +1,4 @@
-# AWS Shop Backend
+﻿# AWS Shop Backend
 
 CloudFront link - [https://d1ondnw0chspyw.cloudfront.net/](https://d20yrfgj13ai1q.cloudfront.net/)
 
@@ -212,3 +212,34 @@ Tested by sending new product and checking email.
   ├──────────────┼────────────────────────────────────┼──────────────┤
   │ Budget       │ roman.aleksandrov1@yandex.by       │ price < 100  │
   └──────────────┴────────────────────────────────────┴──────────────┘
+
+### Task 7.1 ✅ 
+- Create a new service called authorization-service at the same level as Product and Import services with its own AWS CDK Stack. The backend project structure should look like this:
+   backend-repository
+      product-service
+      import-service
+      authorization-service
+- Create a lambda function called basicAuthorizer under the Authorization Service.
+- This lambda should have at least one environment variable with the following credentials:
+{yours_github_account_login}=TEST_PASSWORD
+{yours_github_account_login} - your GitHub account name. Login for test user should be your GitHub account name
+TEST_PASSWORD - password string. Password for test user must be "TEST_PASSWORD"
+example: johndoe=TEST_PASSWORD
+- This basicAuthorizer lambda should take Basic Authorization token, decode it and check that credentials provided by token exist in the lambda environment variable.
+- This lambda should return 403 HTTP status if access is denied for this user (invalid authorization_token) and 401 HTTP status if Authorization header is not provided.
+- In case of successfull authorizations, lambda should return IAM policy, which is enabling the invocation of desired method Documentation.
+
+**
+ NOTE: Do not send your credentials to the GitHub. Use .env file and dotenv package to add environment variables to the lambda. Add .env file to .gitignore file.
+**
+ ### Testing
+ "methodArn": "arn:aws:execute-api:eu-central-1:678364257956:*/GET/products"
+ - Success
+ raman-aleksandrou │ TEST_PASSWORD | cmFtYW4tYWxla3NhbmRyb3U6VEVTVF9QQVNTV09SRA==
+ ![alt text](pics/image-24.png)
+ ![alt text](pics/image-21.png)
+ 
+ - Fail
+ raman-aleksandrou │ TEST_PASSWORD-WRONG | cmFtYW4tYWxla3NhbmRyb3U6VEVTVF9QQVNTV09SRC1XUk9ORw==
+![alt text](pics/image-22.png)
+![alt text](pics/image-23.png)
