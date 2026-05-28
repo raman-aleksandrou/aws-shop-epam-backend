@@ -297,3 +297,25 @@ X-Amz-Cf-Pop: WAW51-P2
 X-Amz-Cf-Id: G2OI0JKmoVQGo5JLFeehl9yqdU17d_YJb4M146-bf1mg5Y9Q6AGttg==
 
 https://aws-shop-epam-import-service.s3.eu-central-1.amazonaws.com/uploaded/test.csv?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEOv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDGV1LWNlbnRyYWwtMSJGMEQCID1IlPOXnqP4l%2FaEbwfBVYZML76RumjaWqao2474YdeWAiBvE2N01BNd9vGPpmXZS%2F9MQkRWWk7iKuEOm05cbkAIbir%2BAwi0%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAAaDDY3ODM2NDI1Nzk1NiIMcWhUTCPtINGznJl8KtIDe1okyaoi2AXmeRbuoU4nqm3JQydCKuujh5CwHtsX9MTfYgQqpcAXmvgk8q8AgFITLUbIqcdAmPzuqHL7u%2BXuXsc7XP6K0YN07ScaHOw25gKD9qfAUr%2B6EfcUUCs0MnjAdoztcDp92LZrUbJH0zirLT94JrNZQdC9%2BjV4292Uuq38e2EsSBIaQm3kQY%2FdQErEHCaQeOZbSNOyT6xQh%2FyF0oCn2nkE7DFBq6MsUrNgu4ywbut6LRrvS89mf4c8k6VUWmrTTxU6Dz%2BtEKQR6W0d7LV6at012NdlwXCgoMsYytVuf0af0xKFC8%2BnlXpbKVaOihra2wy81U6W%2F6fF%2FsPNjhjiMDZrbqcbdhaEO7cwAN7le4VJF8j50Jaf%2BUayUhUqN98%2Bbr3y9s4vp7aIpRDzJcpg%2FiFo37j2c0LVKwLbhGn4UW8k16JWoZYHo74bSvWxUpYWFCkTwFDOY%2FjvVEOfSSNNR865maxcZLnOfC6RaLAXFLlfMVPk4w7BF70alxSUztxq2xEc7MK2yNKB1VQ%2By%2FcMX5pnheatJioQnUsbeLXj3%2FPHrMp9jaQE9HF%2BrovksyKyHBpHKJ9gfRqidBRjushaIrmHSK6JlkAz9f%2FF5LdUujCzqeLQBjqiAdk4j%2F9X1l5yFb28j5hB7FHqwEMcRYL3zZ2vmnf3I%2FLKayydANMWDn35PNAy4%2FBmeZHLtDN87fW%2BPULXKtnPPj4tIhASrzl6YoRFr4Tud45rP56XXH7cGZU1JfuSsGB%2BFSu3VMmKWITBEGlxmFKkDu%2Bx9Ez%2BEK7JgURWTnAAY6TlGOnKH5YlVG3Lqz1BtJVI4Xnx5EwyiBSx3jdsWlCZruhpLg%3D%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260528T191712Z&X-Amz-SignedHeaders=content-type%3Bhost&X-Amz-Expires=300&X-Amz-Credential=ASIAZ34NJD2SCFIOKDDP%2F20260528%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Signature=b637e8eaa526a97c055f001b0433633bfb396d720552cd360fe09e45026efbb3
+
+### Task 7.3 ✅ 
+1. Request from the client application to the /import path of the Import Service should have Basic Authorization header:
+```console
+  Authorization: Basic {authorization_token}
+```
+- {authorization_token} is a base64-encoded {yours_github_account_login}:TEST_PASSWORD
+- example: Authorization: Basic sGLzdRxvZmw0ZXs0UGFzcw==
+2. Client should get authorization_token value from browser localStorage
+  const authorization_token = localStorage.getItem('authorization_token')
+
+  FE-pullrequest https://github.com/raman-aleksandrou/nodejs-aws-shop-react/pull/3
+ ### Testing 
+ Added token to localStorage
+
+ ![alt text](pics/image-26.png)
+
+ Then was made upload file and checked response and headers
+
+ ![alt text](pics/image-25.png)
+
+ And new product was added

@@ -5,6 +5,7 @@ import software.amazon.awscdk.Fn;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.apigateway.AuthorizationType;
+import software.amazon.awscdk.services.apigateway.CorsOptions;
 import software.amazon.awscdk.services.apigateway.LambdaIntegration;
 import software.amazon.awscdk.services.apigateway.MethodOptions;
 import software.amazon.awscdk.services.apigateway.RequestValidator;
@@ -86,6 +87,11 @@ public class ImportServiceStack extends Stack {
         RestApi api = RestApi.Builder.create(this, "ImportServiceApi")
             .restApiName("Import Service API")
             .description("Import Service REST API")
+            .defaultCorsPreflightOptions(CorsOptions.builder()
+                .allowOrigins(List.of("*"))
+                .allowHeaders(List.of("Content-Type", "Authorization"))
+                .allowMethods(List.of("GET", "OPTIONS"))
+                .build())
             .build();
 
         RequestValidator requestValidator = api.addRequestValidator("ImportRequestValidator",
