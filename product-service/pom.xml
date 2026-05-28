@@ -64,6 +64,12 @@
             <artifactId>url-connection-client</artifactId>
         </dependency>
 
+        <!-- AWS SDK v2 SNS -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sns</artifactId>
+        </dependency>
+
         <!-- JSON serialization -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

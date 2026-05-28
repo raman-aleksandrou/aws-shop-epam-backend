@@ -10,6 +10,13 @@ import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
+import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
+import software.amazon.awscdk.services.sns.NumericConditions;
+import software.amazon.awscdk.services.sns.SubscriptionFilter;
+import software.amazon.awscdk.services.sns.Topic;
+import software.amazon.awscdk.services.sns.subscriptions.EmailSubscription;
+import software.amazon.awscdk.services.sns.subscriptions.EmailSubscriptionProps;
+import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import java.util.Map;
@@ -66,6 +73,56 @@ public class ProductServiceStack extends Stack {
         stocksTable.grantReadData(getProductsById);
         productsTable.grantWriteData(createProduct);
         stocksTable.grantWriteData(createProduct);
+
+        Queue catalogItemsQueue = Queue.Builder.create(this, "CatalogItemsQueue")
+            .queueName("catalogItemsQueue")
+            .build();
+
+        Topic createProductTopic = Topic.Builder.create(this, "CreateProductTopic")
+            .topicName("createProductTopic")
+            .build();
+
+        // Premium products (price >= 100)
+        createProductTopic.addSubscription(new EmailSubscription("raman.aleksandrou@gmail.com",
+            EmailSubscriptionProps.builder()
+                .filterPolicy(Map.of(
+                    "price", SubscriptionFilter.numericFilter(NumericConditions.builder()
+                        .greaterThanOrEqualTo(100)
+                        .build())
+                ))
+                .build()));
+
+        // Budget products (price < 100)
+        createProductTopic.addSubscription(new EmailSubscription("roman.aleksandrov1@yandex.by",
+            EmailSubscriptionProps.builder()
+                .filterPolicy(Map.of(
+                    "price", SubscriptionFilter.numericFilter(NumericConditions.builder()
+                        .lessThan(100)
+                        .build())
+                ))
+                .build()));
+
+        Function catalogBatchProcess = Function.Builder.create(this, "CatalogBatchProcessFunction")
+            .functionName("catalogBatchProcess")
+            .runtime(Runtime.JAVA_17)
+            .handler("com.shop.handlers.CatalogBatchProcessHandler::handleRequest")
+            .code(Code.fromAsset("target/product-service.jar"))
+            .memorySize(512)
+            .timeout(Duration.seconds(15))
+            .environment(Map.of(
+                "PRODUCTS_TABLE_NAME", PRODUCTS_TABLE_NAME,
+                "STOCKS_TABLE_NAME", STOCKS_TABLE_NAME,
+                "SNS_TOPIC_ARN", createProductTopic.getTopicArn()
+            ))
+            .build();
+
+        productsTable.grantWriteData(catalogBatchProcess);
+        stocksTable.grantWriteData(catalogBatchProcess);
+        createProductTopic.grantPublish(catalogBatchProcess);
+
+        catalogBatchProcess.addEventSource(SqsEventSource.Builder.create(catalogItemsQueue)
+            .batchSize(5)
+            .build());
 
         RestApi api = RestApi.Builder.create(this, "ProductServiceApi")
             .restApiName("Product Service API")

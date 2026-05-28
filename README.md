@@ -168,3 +168,47 @@ Upload is empty:
 ![alt text](image-4.png)
 Parsed contains this file:
 ![alt text](image-5.png)
+
+### Task 6.1 ✅ 
+- Create a lambda function called catalogBatchProcess under the Product Service which will be triggered by an SQS event.
+![alt text](image-8.png)
+- Create an SQS queue called catalogItemsQueue, in the AWS CDK Stack.
+![alt text](image-6.png)
+- Configure the SQS to trigger lambda catalogBatchProcess with 5 messages at once via batchSize property.
+- The lambda function should iterate over all SQS messages and create corresponding products in the products table.
+![alt text](image-9.png)
+![alt text](image-10.png)
+![alt text](image-11.png)
+
+### Task 6.2 ✅
+
+- Update the importFileParser lambda function in the Import Service to send each CSV record into SQS.
+- It should no longer log entries from the readable stream to CloudWatch.
+Tested by importing from FE https://d20yrfgj13ai1q.cloudfront.net/admin/products
+![alt text](image-12.png)
+![alt text](image-13.png)
+![alt text](image-14.png)
+
+### Task 6.3 ✅
+- Create an SNS topic createProductTopic and email subscription in the AWS CDK Stack of the Product Service.
+![alt text](image-15.png)
+- Create a subscription for this SNS topic with an email endpoint type with your own email in there.
+![alt text](image-16.png)
+- Update the catalogBatchProcess lambda function in the Product Service to send an event to the SNS topic once it creates products.
+Tested by sending new product and checking email.
+![alt text](image-17.png)
+![alt text](image-18.png)
+![alt text](image-19.png)
+
+#### Additional (optional) tasks
+✅ catalogBatchProcess lambda is covered by unit tests
+✅ set a Filter Policy for SNS createProductTopic in AWS CDK Stack and create an additional email subscription to distribute messages to different emails depending on the filter for any product attribute
+![alt text](image-20.png)
+ Filter policy setup:
+  ┌──────────────┬────────────────────────────────────┬──────────────┐
+  │ Subscription │               Email                │    Filter    │
+  ├──────────────┼────────────────────────────────────┼──────────────┤
+  │ Premium      │ raman.aleksandrou@gmail.com        │ price >= 100 │
+  ├──────────────┼────────────────────────────────────┼──────────────┤
+  │ Budget       │ roman.aleksandrov1@yandex.by       │ price < 100  │
+  └──────────────┴────────────────────────────────────┴──────────────┘
