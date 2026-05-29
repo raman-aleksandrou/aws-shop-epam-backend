@@ -319,3 +319,11 @@ https://aws-shop-epam-import-service.s3.eu-central-1.amazonaws.com/uploaded/test
  ![alt text](pics/image-25.png)
 
  And new product was added
+
+ #### Additional (optional) tasks
+
+✅ Client application should display alerts for the responses in 401 and 403 HTTP statuses.
+Test 401 (no Authorization header)
+![alt text](pics/image-27.png)
+Test 403 (wrong credentials)
+![alt text](pics/image-28.png)

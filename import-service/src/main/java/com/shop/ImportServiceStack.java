@@ -6,10 +6,13 @@ import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.apigateway.AuthorizationType;
 import software.amazon.awscdk.services.apigateway.CorsOptions;
+import software.amazon.awscdk.services.apigateway.GatewayResponse;
+import software.amazon.awscdk.services.apigateway.GatewayResponseOptions;
 import software.amazon.awscdk.services.apigateway.LambdaIntegration;
 import software.amazon.awscdk.services.apigateway.MethodOptions;
 import software.amazon.awscdk.services.apigateway.RequestValidator;
 import software.amazon.awscdk.services.apigateway.RequestValidatorOptions;
+import software.amazon.awscdk.services.apigateway.ResponseType;
 import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.TokenAuthorizer;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -93,6 +96,16 @@ public class ImportServiceStack extends Stack {
                 .allowMethods(List.of("GET", "OPTIONS"))
                 .build())
             .build();
+
+        Map<String, String> corsHeaders = Map.of("Access-Control-Allow-Origin", "'*'");
+        api.addGatewayResponse("Unauthorized", GatewayResponseOptions.builder()
+            .type(ResponseType.UNAUTHORIZED)
+            .responseHeaders(corsHeaders)
+            .build());
+        api.addGatewayResponse("AccessDenied", GatewayResponseOptions.builder()
+            .type(ResponseType.ACCESS_DENIED)
+            .responseHeaders(corsHeaders)
+            .build());
 
         RequestValidator requestValidator = api.addRequestValidator("ImportRequestValidator",
             RequestValidatorOptions.builder()
