@@ -1,4 +1,4 @@
-# AWS Shop Backend
+﻿# AWS Shop Backend
 
 CloudFront link - [https://d1ondnw0chspyw.cloudfront.net/](https://d20yrfgj13ai1q.cloudfront.net/)
 
@@ -212,3 +212,135 @@ Tested by sending new product and checking email.
   ├──────────────┼────────────────────────────────────┼──────────────┤
   │ Budget       │ roman.aleksandrov1@yandex.by       │ price < 100  │
   └──────────────┴────────────────────────────────────┴──────────────┘
+
+### Task 7.1 ✅ 
+- Create a new service called authorization-service at the same level as Product and Import services with its own AWS CDK Stack. The backend project structure should look like this:
+   backend-repository
+      product-service
+      import-service
+      authorization-service
+- Create a lambda function called basicAuthorizer under the Authorization Service.
+- This lambda should have at least one environment variable with the following credentials:
+{yours_github_account_login}=TEST_PASSWORD
+{yours_github_account_login} - your GitHub account name. Login for test user should be your GitHub account name
+TEST_PASSWORD - password string. Password for test user must be "TEST_PASSWORD"
+example: johndoe=TEST_PASSWORD
+- This basicAuthorizer lambda should take Basic Authorization token, decode it and check that credentials provided by token exist in the lambda environment variable.
+- This lambda should return 403 HTTP status if access is denied for this user (invalid authorization_token) and 401 HTTP status if Authorization header is not provided.
+- In case of successfull authorizations, lambda should return IAM policy, which is enabling the invocation of desired method Documentation.
+
+**
+ NOTE: Do not send your credentials to the GitHub. Use .env file and dotenv package to add environment variables to the lambda. Add .env file to .gitignore file.
+**
+ ### Testing
+ "methodArn": "arn:aws:execute-api:eu-central-1:678364257956:*/GET/products"
+ - Success
+ raman-aleksandrou │ TEST_PASSWORD | cmFtYW4tYWxla3NhbmRyb3U6VEVTVF9QQVNTV09SRA==
+ ![alt text](pics/image-24.png)
+ ![alt text](pics/image-21.png)
+ 
+ - Fail
+ raman-aleksandrou │ TEST_PASSWORD-WRONG | cmFtYW4tYWxla3NhbmRyb3U6VEVTVF9QQVNTV09SRC1XUk9ORw==
+![alt text](pics/image-22.png)
+![alt text](pics/image-23.png)
+
+### Task 7.2 ✅ 
+- Add Lambda authorization to the /import path of the Import Service API Gateway.
+- Use your basicAuthorizer lambda as the Lambda authorizer
+ ### Testing on Windows PowerShell
+Base URL: https://6g3uxcq0d6.execute-api.eu-central-1.amazonaws.com/prod/import
+Credentials: raman-aleksandrou / TEST_PASSWORD
+Token: cmFtYW4tYWxla3NhbmRyb3U6VEVTVF9QQVNTV09SRA==
+1. Unauthorized - curl.exe -i "https://6g3uxcq0d6.execute-api.eu-central-1.amazonaws.com/prod/import?name=test.csv"
+HTTP/1.1 401 Unauthorized
+Content-Type: application/json
+Content-Length: 26
+Connection: keep-alive
+Date: Thu, 28 May 2026 19:05:46 GMT
+x-amz-apigw-id: eFvBpE_KFiAEKJg=
+x-amzn-RequestId: 70e5cd48-c862-4e60-81f3-4d2a84a1786d
+x-amzn-ErrorType: UnauthorizedException
+X-Cache: Error from cloudfront
+Via: 1.1 4123e89e0fc83589e2324128a6b4b23e.cloudfront.net (CloudFront)
+X-Amz-Cf-Pop: WAW51-P2
+X-Amz-Cf-Id: EmAMfde0c8G05KJEM4uI1HsoBh802YZaVQYVTO90a8NkAm5WqHAUXQ==
+
+{"message":"Unauthorized"}
+2. Forbidden -   curl.exe -i "https://6g3uxcq0d6.execute-api.eu-central-1.amazonaws.com/prod/import?name=test.csv" -H "Authorization: Basic cmFtYW4tYWxla3NhbmRyb3U6V1JPTkc="
+HTTP/1.1 403 Forbidden
+Content-Type: application/json
+Content-Length: 110
+Connection: keep-alive
+Date: Thu, 28 May 2026 19:15:24 GMT
+x-amz-apigw-id: eFwbzEkEFiAEDmQ=
+x-amzn-RequestId: 534bdfa7-682c-4a78-bc86-b51b844a073f
+x-amzn-ErrorType: AccessDeniedException
+X-Cache: Error from cloudfront
+Via: 1.1 d5dc130df504729356d2dede87be3764.cloudfront.net (CloudFront)
+X-Amz-Cf-Pop: WAW51-P2
+X-Amz-Cf-Id: BW0Su2qVztwuwpLLZwDgldMeWxWTqAoIErjvjc9F03TJZYHNWQDb0Q==
+
+{"Message":"User is not authorized to access this resource with an explicit deny in an identity-based policy"}
+3. OK -  curl.exe -i "https://6g3uxcq0d6.execute-api.eu-central-1.amazonaws.com/prod/import?name=test.csv" -H "Authorization: Basic cmFtYW4tYWxla3NhbmRyb3U6VEVTVF9QQVNTV09SRA=="
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Content-Length: 1550
+Connection: keep-alive
+Date: Thu, 28 May 2026 19:17:12 GMT
+X-Amzn-Trace-Id: Root=1-6a1894b3-433044b15ea6a7710f86ac87;Parent=1aa80bce28651b7c;Sampled=0;Lineage=2:f3d743bd:0
+x-amzn-RequestId: f9c4991e-d560-4897-9546-731f7f0eeb93
+Access-Control-Allow-Origin: *
+x-amz-apigw-id: eFwsHGYcliAEWCw=
+X-Cache: Miss from cloudfront
+Via: 1.1 ba172beaa058835048fe52f15497da64.cloudfront.net (CloudFront)
+X-Amz-Cf-Pop: WAW51-P2
+X-Amz-Cf-Id: G2OI0JKmoVQGo5JLFeehl9yqdU17d_YJb4M146-bf1mg5Y9Q6AGttg==
+
+https://aws-shop-epam-import-service.s3.eu-central-1.amazonaws.com/uploaded/test.csv?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEOv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDGV1LWNlbnRyYWwtMSJGMEQCID1IlPOXnqP4l%2FaEbwfBVYZML76RumjaWqao2474YdeWAiBvE2N01BNd9vGPpmXZS%2F9MQkRWWk7iKuEOm05cbkAIbir%2BAwi0%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAAaDDY3ODM2NDI1Nzk1NiIMcWhUTCPtINGznJl8KtIDe1okyaoi2AXmeRbuoU4nqm3JQydCKuujh5CwHtsX9MTfYgQqpcAXmvgk8q8AgFITLUbIqcdAmPzuqHL7u%2BXuXsc7XP6K0YN07ScaHOw25gKD9qfAUr%2B6EfcUUCs0MnjAdoztcDp92LZrUbJH0zirLT94JrNZQdC9%2BjV4292Uuq38e2EsSBIaQm3kQY%2FdQErEHCaQeOZbSNOyT6xQh%2FyF0oCn2nkE7DFBq6MsUrNgu4ywbut6LRrvS89mf4c8k6VUWmrTTxU6Dz%2BtEKQR6W0d7LV6at012NdlwXCgoMsYytVuf0af0xKFC8%2BnlXpbKVaOihra2wy81U6W%2F6fF%2FsPNjhjiMDZrbqcbdhaEO7cwAN7le4VJF8j50Jaf%2BUayUhUqN98%2Bbr3y9s4vp7aIpRDzJcpg%2FiFo37j2c0LVKwLbhGn4UW8k16JWoZYHo74bSvWxUpYWFCkTwFDOY%2FjvVEOfSSNNR865maxcZLnOfC6RaLAXFLlfMVPk4w7BF70alxSUztxq2xEc7MK2yNKB1VQ%2By%2FcMX5pnheatJioQnUsbeLXj3%2FPHrMp9jaQE9HF%2BrovksyKyHBpHKJ9gfRqidBRjushaIrmHSK6JlkAz9f%2FF5LdUujCzqeLQBjqiAdk4j%2F9X1l5yFb28j5hB7FHqwEMcRYL3zZ2vmnf3I%2FLKayydANMWDn35PNAy4%2FBmeZHLtDN87fW%2BPULXKtnPPj4tIhASrzl6YoRFr4Tud45rP56XXH7cGZU1JfuSsGB%2BFSu3VMmKWITBEGlxmFKkDu%2Bx9Ez%2BEK7JgURWTnAAY6TlGOnKH5YlVG3Lqz1BtJVI4Xnx5EwyiBSx3jdsWlCZruhpLg%3D%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260528T191712Z&X-Amz-SignedHeaders=content-type%3Bhost&X-Amz-Expires=300&X-Amz-Credential=ASIAZ34NJD2SCFIOKDDP%2F20260528%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Signature=b637e8eaa526a97c055f001b0433633bfb396d720552cd360fe09e45026efbb3
+
+### Task 7.3 ✅ 
+1. Request from the client application to the /import path of the Import Service should have Basic Authorization header:
+```console
+  Authorization: Basic {authorization_token}
+```
+- {authorization_token} is a base64-encoded {yours_github_account_login}:TEST_PASSWORD
+- example: Authorization: Basic sGLzdRxvZmw0ZXs0UGFzcw==
+2. Client should get authorization_token value from browser localStorage
+  const authorization_token = localStorage.getItem('authorization_token')
+
+  FE-pullrequest https://github.com/raman-aleksandrou/nodejs-aws-shop-react/pull/3
+ ### Testing 
+ Added token to localStorage
+
+ ![alt text](pics/image-26.png)
+
+ Then was made upload file and checked response and headers
+
+ ![alt text](pics/image-25.png)
+
+ And new product was added
+
+ #### Additional (optional) tasks
+
+✅ Client application should display alerts for the responses in 401 and 403 HTTP statuses.
+Test 401 (no Authorization header)
+![alt text](pics/image-27.png)
+Test 403 (wrong credentials)
+![alt text](pics/image-28.png)
+
+✅ Add Login page and protect getProductsList lambda by the Cognito Authorizer
+✅ Create Cognito User Pool using a demo from the lecture. Leave email in a list of standard required attributes. Checkbox Allow users to sign themselves up should be checked. Also, set email as an attribute that you want to verify.
+✅ Add App Client to the User Pool
+✅ In the App Client Settings section select all Identity Providers. Fill the Callback URL(s) field with your Client Application URL (i.e. http://localhost:3000/). Allow only Authorization code grant OAuth Flow. Allow all OAuth Scopes
+✅ Create Domain name
+After all of these manipulations, you can open your Login Page by clicking on the Launch Hosted UI link in the App Client Settings
+Provide this link to your reviewers. The reviewer can just confirm that everything works for him too.
+
+**Hosted UI Login Page:** https://shop-epam-raman.auth.eu-central-1.amazoncognito.com/login?client_id=37ittrbrcl04jmp9kd1350plqf&response_type=token&scope=openid+email+profile&redirect_uri=https://d20yrfgj13ai1q.cloudfront.net/
+✅ Add Cognito authorizer to the getProductsList lambda. Use Authorization as a Token Source
+How to make sure that everything works as expected:
+Open Login Page and Sign Up a new user. Use a real email address to create this user
+Verify user using code from the email
+After verification and after every login you will be redirected to the Client application. URL should contain id_token which can be used to access the getProductsList lambda
+Call getProductsList lambda using id_token as a value for the Authorization header
+Remove authorization from the getProductsList after your task will be checked

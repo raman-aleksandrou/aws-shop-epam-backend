@@ -1,16 +1,25 @@
 package com.shop;
 
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.Fn;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.apigateway.AuthorizationType;
+import software.amazon.awscdk.services.apigateway.CorsOptions;
+import software.amazon.awscdk.services.apigateway.GatewayResponse;
+import software.amazon.awscdk.services.apigateway.GatewayResponseOptions;
 import software.amazon.awscdk.services.apigateway.LambdaIntegration;
 import software.amazon.awscdk.services.apigateway.MethodOptions;
 import software.amazon.awscdk.services.apigateway.RequestValidator;
 import software.amazon.awscdk.services.apigateway.RequestValidatorOptions;
+import software.amazon.awscdk.services.apigateway.ResponseType;
 import software.amazon.awscdk.services.apigateway.RestApi;
+import software.amazon.awscdk.services.apigateway.TokenAuthorizer;
 import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -81,7 +90,22 @@ public class ImportServiceStack extends Stack {
         RestApi api = RestApi.Builder.create(this, "ImportServiceApi")
             .restApiName("Import Service API")
             .description("Import Service REST API")
+            .defaultCorsPreflightOptions(CorsOptions.builder()
+                .allowOrigins(List.of("*"))
+                .allowHeaders(List.of("Content-Type", "Authorization"))
+                .allowMethods(List.of("GET", "OPTIONS"))
+                .build())
             .build();
+
+        Map<String, String> corsHeaders = Map.of("Access-Control-Allow-Origin", "'*'");
+        api.addGatewayResponse("Unauthorized", GatewayResponseOptions.builder()
+            .type(ResponseType.UNAUTHORIZED)
+            .responseHeaders(corsHeaders)
+            .build());
+        api.addGatewayResponse("AccessDenied", GatewayResponseOptions.builder()
+            .type(ResponseType.ACCESS_DENIED)
+            .responseHeaders(corsHeaders)
+            .build());
 
         RequestValidator requestValidator = api.addRequestValidator("ImportRequestValidator",
             RequestValidatorOptions.builder()
@@ -89,11 +113,27 @@ public class ImportServiceStack extends Stack {
                 .validateRequestParameters(true)
                 .build());
 
+        IFunction basicAuthorizerFn = Function.fromFunctionArn(this, "BasicAuthorizerFn",
+            Fn.importValue("BasicAuthorizerArn"));
+
+        // Imported functions don't get the invoke permission automatically — add it explicitly
+        basicAuthorizerFn.addPermission("AllowApiGatewayInvoke",
+            software.amazon.awscdk.services.lambda.Permission.builder()
+                .principal(new ServicePrincipal("apigateway.amazonaws.com"))
+                .action("lambda:InvokeFunction")
+                .build());
+
+        TokenAuthorizer tokenAuthorizer = TokenAuthorizer.Builder.create(this, "BasicTokenAuthorizer")
+            .handler(basicAuthorizerFn)
+            .build();
+
         var importResource = api.getRoot().addResource("import");
         importResource.addMethod("GET", new LambdaIntegration(importProductsFile),
             MethodOptions.builder()
                 .requestParameters(Map.of("method.request.querystring.name", true))
                 .requestValidator(requestValidator)
+                .authorizer(tokenAuthorizer)
+                .authorizationType(AuthorizationType.CUSTOM)
                 .build());
     }
 }
