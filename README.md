@@ -327,3 +327,20 @@ Test 401 (no Authorization header)
 ![alt text](pics/image-27.png)
 Test 403 (wrong credentials)
 ![alt text](pics/image-28.png)
+
+✅ Add Login page and protect getProductsList lambda by the Cognito Authorizer
+✅ Create Cognito User Pool using a demo from the lecture. Leave email in a list of standard required attributes. Checkbox Allow users to sign themselves up should be checked. Also, set email as an attribute that you want to verify.
+✅ Add App Client to the User Pool
+✅ In the App Client Settings section select all Identity Providers. Fill the Callback URL(s) field with your Client Application URL (i.e. http://localhost:3000/). Allow only Authorization code grant OAuth Flow. Allow all OAuth Scopes
+✅ Create Domain name
+After all of these manipulations, you can open your Login Page by clicking on the Launch Hosted UI link in the App Client Settings
+Provide this link to your reviewers. The reviewer can just confirm that everything works for him too.
+
+**Hosted UI Login Page:** https://shop-epam-raman.auth.eu-central-1.amazoncognito.com/login?client_id=37ittrbrcl04jmp9kd1350plqf&response_type=token&scope=openid+email+profile&redirect_uri=https://d20yrfgj13ai1q.cloudfront.net/
+✅ Add Cognito authorizer to the getProductsList lambda. Use Authorization as a Token Source
+How to make sure that everything works as expected:
+Open Login Page and Sign Up a new user. Use a real email address to create this user
+Verify user using code from the email
+After verification and after every login you will be redirected to the Client application. URL should contain id_token which can be used to access the getProductsList lambda
+Call getProductsList lambda using id_token as a value for the Authorization header
+Remove authorization from the getProductsList after your task will be checked

@@ -1,10 +1,30 @@
 package com.shop;
 
+import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.apigateway.AuthorizationType;
+import software.amazon.awscdk.services.apigateway.CognitoUserPoolsAuthorizer;
+import software.amazon.awscdk.services.apigateway.CorsOptions;
+import software.amazon.awscdk.services.apigateway.GatewayResponseOptions;
 import software.amazon.awscdk.services.apigateway.LambdaIntegration;
+import software.amazon.awscdk.services.apigateway.MethodOptions;
+import software.amazon.awscdk.services.apigateway.ResponseType;
 import software.amazon.awscdk.services.apigateway.RestApi;
+import software.amazon.awscdk.services.cognito.AuthFlow;
+import software.amazon.awscdk.services.cognito.AutoVerifiedAttrs;
+import software.amazon.awscdk.services.cognito.CognitoDomainOptions;
+import software.amazon.awscdk.services.cognito.OAuthFlows;
+import software.amazon.awscdk.services.cognito.OAuthScope;
+import software.amazon.awscdk.services.cognito.OAuthSettings;
+import software.amazon.awscdk.services.cognito.PasswordPolicy;
+import software.amazon.awscdk.services.cognito.SignInAliases;
+import software.amazon.awscdk.services.cognito.StandardAttribute;
+import software.amazon.awscdk.services.cognito.StandardAttributes;
+import software.amazon.awscdk.services.cognito.UserPool;
+import software.amazon.awscdk.services.cognito.UserPoolClientOptions;
+import software.amazon.awscdk.services.cognito.UserPoolDomainOptions;
 import software.amazon.awscdk.services.dynamodb.ITable;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.lambda.Code;
@@ -19,12 +39,14 @@ import software.amazon.awscdk.services.sns.subscriptions.EmailSubscriptionProps;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import java.util.List;
 import java.util.Map;
 
 public class ProductServiceStack extends Stack {
 
     private static final String PRODUCTS_TABLE_NAME = "products";
     private static final String STOCKS_TABLE_NAME = "stocks";
+    private static final String CLIENT_APP_URL = "https://d20yrfgj13ai1q.cloudfront.net/";
 
     public ProductServiceStack(final Construct scope, final String id, final StackProps props) {
         super(scope, id, props);
@@ -124,13 +146,84 @@ public class ProductServiceStack extends Stack {
             .batchSize(5)
             .build());
 
+        // Cognito User Pool
+        UserPool userPool = UserPool.Builder.create(this, "ShopUserPoolV2")
+            .userPoolName("aws-shop-epam-user-pool")
+            .selfSignUpEnabled(true)
+            .signInAliases(SignInAliases.builder().username(true).email(true).build())
+            .autoVerify(AutoVerifiedAttrs.builder().email(true).build())
+            .standardAttributes(StandardAttributes.builder()
+                .email(StandardAttribute.builder().required(false).mutable(true).build())
+                .build())
+            .passwordPolicy(PasswordPolicy.builder()
+                .minLength(8)
+                .requireLowercase(false)
+                .requireUppercase(false)
+                .requireDigits(false)
+                .requireSymbols(false)
+                .build())
+            .build();
+
+        var userPoolClient = userPool.addClient("ShopUserPoolClient",
+            UserPoolClientOptions.builder()
+                .authFlows(AuthFlow.builder()
+                    .userPassword(true)
+                    .userSrp(true)
+                    .build())
+                .oAuth(OAuthSettings.builder()
+                    .flows(OAuthFlows.builder().authorizationCodeGrant(true).implicitCodeGrant(true).build())
+                    .scopes(List.of(
+                        OAuthScope.OPENID,
+                        OAuthScope.EMAIL,
+                        OAuthScope.PROFILE,
+                        OAuthScope.PHONE,
+                        OAuthScope.COGNITO_ADMIN
+                    ))
+                    .callbackUrls(List.of(CLIENT_APP_URL))
+                    .build())
+                .build());
+
+        var userPoolDomain = userPool.addDomain("ShopUserPoolDomain",
+            UserPoolDomainOptions.builder()
+                .cognitoDomain(CognitoDomainOptions.builder()
+                    .domainPrefix("shop-epam-raman")
+                    .build())
+                .build());
+
+        CfnOutput.Builder.create(this, "CognitoHostedUiUrl")
+            .description("Cognito Hosted UI login page")
+            .value(userPoolDomain.baseUrl() + "/login?client_id=" +
+                   userPoolClient.getUserPoolClientId() + "&response_type=token&scope=openid+email+profile&redirect_uri=" +
+                   CLIENT_APP_URL)
+            .build();
+
+        CognitoUserPoolsAuthorizer cognitoAuthorizer = CognitoUserPoolsAuthorizer.Builder
+            .create(this, "CognitoAuthorizer")
+            .cognitoUserPools(List.of(userPool))
+            .identitySource("method.request.header.Authorization")
+            .build();
+
         RestApi api = RestApi.Builder.create(this, "ProductServiceApi")
             .restApiName("Product Service API")
             .description("Product Service REST API")
+            .defaultCorsPreflightOptions(CorsOptions.builder()
+                .allowOrigins(List.of("*"))
+                .allowHeaders(List.of("Content-Type", "Authorization"))
+                .allowMethods(List.of("GET", "POST", "OPTIONS"))
+                .build())
             .build();
 
+        api.addGatewayResponse("Unauthorized", GatewayResponseOptions.builder()
+            .type(ResponseType.UNAUTHORIZED)
+            .responseHeaders(Map.of("Access-Control-Allow-Origin", "'*'"))
+            .build());
+
         var productsResource = api.getRoot().addResource("products");
-        productsResource.addMethod("GET", new LambdaIntegration(getProductsList));
+        productsResource.addMethod("GET", new LambdaIntegration(getProductsList),
+            MethodOptions.builder()
+                .authorizer(cognitoAuthorizer)
+                .authorizationType(AuthorizationType.COGNITO)
+                .build());
         productsResource.addMethod("POST", new LambdaIntegration(createProduct));
         productsResource.addResource("{productId}")
             .addMethod("GET", new LambdaIntegration(getProductsById));
