@@ -3,3 +3,4 @@ cdk.out/
 .idea/
 dependency-reduced-pom.xml
 *.class
+.env
