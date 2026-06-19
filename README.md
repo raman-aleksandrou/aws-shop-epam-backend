@@ -344,3 +344,137 @@ Verify user using code from the email
 After verification and after every login you will be redirected to the Client application. URL should contain id_token which can be used to access the getProductsList lambda
 Call getProductsList lambda using id_token as a value for the Authorization header
 Remove authorization from the getProductsList after your task will be checked
+
+### Task 10.1 ✅
+1. Create a new service called bff-service at the same level as Product Service and Import Service. The backend project structure should look like this:
+```
+   backend-repository
+      product-service
+      import-service
+      bff-service
+      authorization-service
+```
+2. Create an application in this folder, that listens for all requests and redirects those requests to the appropriate services based on variables provided by the ```.env``` file.
+
+3. Here's the workflow example that BFF Service should support:
+
+- Make requests to BFF Service with URL in the following format: {bff-service-url}/{recipient-service-name}?var1=someValue
+
+-- {bff-service-url} - for example, http://localhost:3000
+-- {recipient-service-name} - "cart" or "product" (you can use any other mapping of your choice)
+---?var1=someValue - query string
+
+- Get recipientURL from the env variables using {recipient-service-name} as a key
+
+- Get request method (GET, POST, etc.)
+
+- Make a new request to the needed service using the appropriate method and recipientURL
+
+- BFF Service should return the result of the recipient’s request
+
+4. If BFF Service cannot find recipientURL by the {recipient-service-name}, return a "Cannot process request" error message with status 502.
+5. BFF Service should return the same status code and error message that the recipient service returns to the BFF Service in case of any error on the recipient service side.
+
+### Task 10.2 ✅
+1. Deploy BFF Service with Elastic Beanstalk.
+- Application name must follow the following convention {yours_github_account_login}-bff-api
+- Use the --cname option {yours_github_account_login}-bff-api-{environment_name}
+- Use the --single option
+2. BFF Service should work only with requests from the Product Service and Cart Service.
+3. All Product Service and Cart Service methods should work correctly if requested via BFF Service
+
+ ### Testing
+Deployed BFF URL (Elastic Beanstalk, `--single`): http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com
+
+`.env` mappings used by the BFF (only Product and Cart):
+```
+product=https://byb2npd55e.execute-api.eu-central-1.amazonaws.com/prod/products
+cart=http://raman-aleksandrou-cart-api-prod.eu-central-1.elasticbeanstalk.com/api
+```
+
+`getProductsList` is protected by the Cognito authorizer (Task 7.3), so an `id_token` is required for a `200` on `/product`.
+Get it by opening the Hosted UI Login Page, signing in, and copying `id_token` 
+
+#### 1. Unknown service -> 502 (BFF cannot find recipientURL) — Task 10.1 p.4
+```console
+curl.exe -i "http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com/unknown"
+```
+![alt text](pics/image-29.png)
+
+#### 2. GET /product without token -> recipient's 401 passed through — Task 10.1 p.2,3,5
+```console
+curl.exe -i "http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com/product"
+```
+![alt text](pics/image-30.png)
+
+#### 3. GET /product with id_token -> 200 + products list (happy path) — Task 10.1 p.2,3
+`getProductsList` is protected by the Cognito authorizer (Task 7.3), so an `id_token` is required for a `200` on `/product`.
+Get it by opening the Hosted UI Login Page with creds raman-aleksandrou|TEST_PASSWORD, signing in, and copying `id_token` from storage(token expires in 1 hour)
+
+```console
+curl.exe -i -H "Authorization: <id_token>" "http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com/product"
+```
+![alt text](pics/image-31.png)
+
+#### 4. GET /product/{id} -> path forwarded, recipient's 404 passed through — Task 10.1 p.3,5
+```console
+curl.exe -i "http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com/product/123"
+```
+![alt text](pics/image-32.png)
+
+#### 5. GET /cart -> proxied to Cart Service — Task 10.1 p.2,3
+```console
+curl.exe -i "http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com/cart"
+```
+![alt text](pics/image-33.png)
+
+#### 6. POST /product -> same method forwarded, product created — Task 10.1 p.3
+```console
+  curl.exe --% -i -X POST -H "Content-Type: application/json" -d "{\"title\":\"Test BFF\",\"description\":\"created via bff\",\"price\":10,\"count\":1}" "http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com/product"
+```
+![alt text](pics/image-34.png)
+
+## For Reviewers
+
+### Links & Service URLs
+| Item | URL |
+| --- | --- |
+| Repository | https://github.com/raman-aleksandrou/aws-shop-epam-backend |
+| Product Service API | https://byb2npd55e.execute-api.eu-central-1.amazonaws.com/prod |
+| Cart Service API | http://raman-aleksandrou-cart-api-prod.eu-central-1.elasticbeanstalk.com/api |
+| BFF Service API | http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com |
+
+### Call createProduct lambda directly (Product Service)
+- **URL:** `POST https://byb2npd55e.execute-api.eu-central-1.amazonaws.com/prod/products`
+- **Headers:** `Content-Type: application/json`
+- **Payload:**
+```json
+{
+  "title": "New Product by POST-1",
+  "description": "Product description",
+  "price": 99.99,
+  "count": 10
+}
+```
+- **Example (PowerShell):**
+```console
+curl.exe --% -i -X POST -H "Content-Type: application/json" -d "{\"title\":\"New Product by POST-1\",\"description\":\"Product description\",\"price\":99.99,\"count\":10}" "https://byb2npd55e.execute-api.eu-central-1.amazonaws.com/prod/products"
+```
+Returns `201` with the created product (including a generated `id`).
+
+### Call Product Service & Cart Service via the BFF Service
+The BFF forwards `/<service>/...` to the matching service (first path segment selects the target). Base URL: `http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com`
+
+- **Product Service via BFF** — `GET /product` (requires Cognito `id_token`, see Task 10.1 #3 above)- is protected by the Cognito authorizer (Task 7.3), so an `id_token` is required for a `200` on `/product`.
+Get it by opening the Hosted UI Login Page with creds raman-aleksandrou|TEST_PASSWORD, signing in, and copying `id_token` from storage(token expires in 1 hour):
+```console
+curl.exe -i -H "Authorization: <id_token>" "http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com/product"
+```
+- **Create product via BFF** — `POST /product`:
+```console
+curl.exe --% -i -X POST -H "Content-Type: application/json" -d "{\"title\":\"Test BFF\",\"description\":\"created via bff\",\"price\":10,\"count\":1}" "http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com/product"
+```
+- **Cart Service via BFF** — `GET /cart`:
+```console
+curl.exe -i "http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com/cart"
+```
