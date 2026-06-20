@@ -30,10 +30,12 @@ public class ProxyController {
             Set.of("transfer-encoding", "content-length", "connection");
 
     private final ServiceUrlResolver resolver;
+    private final ProductsListCache productsListCache;
     private final RestClient restClient = RestClient.create();
 
-    public ProxyController(ServiceUrlResolver resolver) {
+    public ProxyController(ServiceUrlResolver resolver, ProductsListCache productsListCache) {
         this.resolver = resolver;
+        this.productsListCache = productsListCache;
     }
 
     @RequestMapping("/**")
@@ -58,6 +60,22 @@ public class ProxyController {
 
         HttpMethod method = HttpMethod.valueOf(request.getMethod());
 
+        // getProductsList is GET /product (no sub-path, no query). Serve it from a
+        // 2-minute cache, but only for authenticated requests so that requests
+        // without a token still reach the Product Service authorizer and get a 401.
+        boolean isProductsList = method == HttpMethod.GET
+                && "product".equalsIgnoreCase(serviceName)
+                && (remainder.isEmpty() || remainder.equals("/"))
+                && query == null;
+        boolean authenticated = request.getHeader(HttpHeaders.AUTHORIZATION) != null;
+
+        if (isProductsList && authenticated) {
+            ResponseEntity<byte[]> cached = productsListCache.get();
+            if (cached != null) {
+                return cached;
+            }
+        }
+
         try {
             RestClient.RequestBodySpec spec = restClient.method(method).uri(URI.create(target));
 
@@ -73,7 +91,7 @@ public class ProxyController {
             }
 
             // exchange() returns the recipient's response as-is, without throwing on 4xx/5xx.
-            return spec.exchange((req, res) -> {
+            ResponseEntity<byte[]> response = spec.exchange((req, res) -> {
                 byte[] responseBody = res.getBody() != null ? res.getBody().readAllBytes() : new byte[0];
                 HttpHeaders headers = new HttpHeaders();
                 res.getHeaders().forEach((key, values) -> {
@@ -85,6 +103,13 @@ public class ProxyController {
                 });
                 return ResponseEntity.status(res.getStatusCode()).headers(headers).body(responseBody);
             });
+
+            // Cache only successful getProductsList responses.
+            if (isProductsList && response != null && response.getStatusCode().is2xxSuccessful()) {
+                productsListCache.put(response);
+            }
+
+            return response;
         } catch (Exception ex) {
             // Recipient unreachable / network failure.
             return ResponseEntity.status(502)

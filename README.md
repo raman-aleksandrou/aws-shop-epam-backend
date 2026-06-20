@@ -478,3 +478,49 @@ curl.exe --% -i -X POST -H "Content-Type: application/json" -d "{\"title\":\"Tes
 ```console
 curl.exe -i "http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com/cart"
 ```
+By this point your application must be able to do:
+
+Products representation on Home page should be based on Product Service API. ✅
+Products are coming from Product DB. ✅
+Product images are not randomly generated on client side. Product image links, same as another product model information should be stored on BE side in Product DB. ✅
+Products might be created through CSV product file import from client side. ✅
+Cart might be created with appropriate product set. ✅
+Auth logic should be in place ✅
+
+### Additional (optional) tasks ✅
+- Add a cache at the BFF Service level for a request to the getProductsList lambda function of the Product Service. The cache should expire in 2 minutes.
+
+#### Testing ✅
+Protected by the Cognito authorizer (Task 7.3), so an `id_token` is required for a `200` on `/product`.
+Get it by opening the Hosted UI Login Page with creds raman-aleksandrou|TEST_PASSWORD, signing in, and copying `id_token` from storage(token expires in 1 hour):
+
+Test (with a valid Cognito `id_token`):
+```console
+# 1. Get products list (populates cache)
+curl.exe -i -H "Authorization: <id_token>" "http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com/product"
+```
+![alt text](pics/image-35.png)
+```console
+# 2. Create a new product
+curl.exe --% -i -X POST -H "Content-Type: application/json" -d "{\"title\":\"Cache Test\",\"description\":\"created via bff\",\"price\":10,\"count\":1}" "http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com/product"
+```
+![alt text](pics/image-36.png)
+```console
+# 3. Get products list within 2 min -> served from cache, new product NOT present
+curl.exe -i -H "Authorization: <id_token>" "http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com/product"
+```
+![alt text](pics/image-37.png)
+
+BEFORE no Cache Test product:
+
+[{"id":"2","title":"Sony WH-1000XM5","description":"Wireless noise-cancelling over-ear headphones, black","price":349.0,"count":12,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Sony-WH-1000XM3-kabellose-Bluetooth-Noise-Cancelling-Kopfhoerer.jpg/500px-Sony-WH-1000XM3-kabellose-Bluetooth-Noise-Cancelling-Kopfhoerer.jpg"},{"id":"8","title":"GoPro HERO12 Black","description":"5.3K60 video, HyperSmooth 6.0, waterproof to 10m","price":399.0,"count":9,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/GoPro_Hero_%288009036215%29.jpg/500px-GoPro_Hero_%288009036215%29.jpg"},{"id":"9","title":"DJI Mini 4 Pro","description":"4K/60fps drone, 34-min flight, omnidirectional sensing","price":759.0,"count":4,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/2024_Dron_DJI_Mini_4_Pro_%2818%29.jpg/330px-2024_Dron_DJI_Mini_4_Pro_%2818%29.jpg"},{"id":"1","title":"Apple MacBook Pro 14\"","description":"M3 Pro chip, 18GB RAM, 512GB SSD, Space Black","price":1999.0,"count":5,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/MacBook_Pro_16_%28M1_Pro%2C_2021%29_-_Wikipedia.jpg/330px-MacBook_Pro_16_%28M1_Pro%2C_2021%29_-_Wikipedia.jpg"},{"id":"6","title":"Dell UltraSharp 27\" 4K Monitor","description":"U2723QE, IPS Black, USB-C 90W, color accurate","price":579.0,"count":7,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Monitor_-_Flickr_-_davispuh.jpg/500px-Monitor_-_Flickr_-_davispuh.jpg"},{"id":"5","title":"Logitech MX Master 3S","description":"Wireless ergonomic mouse, 8K DPI, silent clicks","price":99.0,"count":35,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Logitech_MX_Master_3S_HS12.jpg/500px-Logitech_MX_Master_3S_HS12.jpg"},{"id":"4","title":"Apple AirPods Pro (2nd Gen)","description":"Active noise cancellation, MagSafe USB-C case","price":249.0,"count":20,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/AirPods_Pro_3_with_case.jpg/330px-AirPods_Pro_3_with_case.jpg"},{"id":"7","title":"Kindle Paperwhite (11th Gen)","description":"6.8\" display, 32GB, waterproof, adjustable warm light","price":139.0,"count":18,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/2023_Amazon_Kindle_Paperwhite_%282%29.jpg/500px-2023_Amazon_Kindle_Paperwhite_%282%29.jpg"},{"id":"3","title":"Samsung 65\" QLED 4K TV","description":"QN65Q80C, 120Hz, Quantum HDR, Smart TV 2023","price":1197.0,"count":3,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Samsung_QLED_TV_8K_-_75_inches_-_2018-11-02.jpg/500px-Samsung_QLED_TV_8K_-_75_inches_-_2018-11-02.jpg"},{"id":"10","title":"Apple iPad Pro 12.9\" M2","description":"256GB Wi-Fi, Liquid Retina XDR, Apple Pencil support","price":1099.0,"count":6,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Wikipedia_on_iPad_Pro.jpg/330px-Wikipedia_on_iPad_Pro.jpg"}]
+
+```console
+# 4. Wait > 2 minutes, then get products list -> cache expired, new product present
+curl.exe -i -H "Authorization: <id_token>" "http://raman-aleksandrou-bff-api-dev.eu-central-1.elasticbeanstalk.com/product"
+```
+![alt text](pics/image-38.png)
+
+After Cache Test product exists:
+
+[{"id":"2","title":"Sony WH-1000XM5","description":"Wireless noise-cancelling over-ear headphones, black","price":349.0,"count":12,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Sony-WH-1000XM3-kabellose-Bluetooth-Noise-Cancelling-Kopfhoerer.jpg/500px-Sony-WH-1000XM3-kabellose-Bluetooth-Noise-Cancelling-Kopfhoerer.jpg"},{"id":"8","title":"GoPro HERO12 Black","description":"5.3K60 video, HyperSmooth 6.0, waterproof to 10m","price":399.0,"count":9,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/GoPro_Hero_%288009036215%29.jpg/500px-GoPro_Hero_%288009036215%29.jpg"},{"id":"9","title":"DJI Mini 4 Pro","description":"4K/60fps drone, 34-min flight, omnidirectional sensing","price":759.0,"count":4,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/2024_Dron_DJI_Mini_4_Pro_%2818%29.jpg/330px-2024_Dron_DJI_Mini_4_Pro_%2818%29.jpg"},{"id":"1","title":"Apple MacBook Pro 14\"","description":"M3 Pro chip, 18GB RAM, 512GB SSD, Space Black","price":1999.0,"count":5,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/MacBook_Pro_16_%28M1_Pro%2C_2021%29_-_Wikipedia.jpg/330px-MacBook_Pro_16_%28M1_Pro%2C_2021%29_-_Wikipedia.jpg"},{"id":"6","title":"Dell UltraSharp 27\" 4K Monitor","description":"U2723QE, IPS Black, USB-C 90W, color accurate","price":579.0,"count":7,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Monitor_-_Flickr_-_davispuh.jpg/500px-Monitor_-_Flickr_-_davispuh.jpg"},{"id":"5","title":"Logitech MX Master 3S","description":"Wireless ergonomic mouse, 8K DPI, silent clicks","price":99.0,"count":35,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Logitech_MX_Master_3S_HS12.jpg/500px-Logitech_MX_Master_3S_HS12.jpg"},{"id":"4","title":"Apple AirPods Pro (2nd Gen)","description":"Active noise cancellation, MagSafe USB-C case","price":249.0,"count":20,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/AirPods_Pro_3_with_case.jpg/330px-AirPods_Pro_3_with_case.jpg"},{"id":"b47d65a3-c745-44aa-b535-87e3408a1e70","title":"Cache Test","description":"created via bff","price":10.0,"count":1,"image":"https://via.placeholder.com/300x200?text=No+Image"},{"id":"7","title":"Kindle Paperwhite (11th Gen)","description":"6.8\" display, 32GB, waterproof, adjustable warm light","price":139.0,"count":18,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/2023_Amazon_Kindle_Paperwhite_%282%29.jpg/500px-2023_Amazon_Kindle_Paperwhite_%282%29.jpg"},{"id":"3","title":"Samsung 65\" QLED 4K TV","description":"QN65Q80C, 120Hz, Quantum HDR, Smart TV 2023","price":1197.0,"count":3,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Samsung_QLED_TV_8K_-_75_inches_-_2018-11-02.jpg/500px-Samsung_QLED_TV_8K_-_75_inches_-_2018-11-02.jpg"},{"id":"10","title":"Apple iPad Pro 12.9\" M2","description":"256GB Wi-Fi, Liquid Retina XDR, Apple Pencil support","price":1099.0,"count":6,"image":"https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Wikipedia_on_iPad_Pro.jpg/330px-Wikipedia_on_iPad_Pro.jpg"}]
