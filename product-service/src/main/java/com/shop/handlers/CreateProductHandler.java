@@ -63,7 +63,8 @@ public class CreateProductHandler
                 node.get("title").asText(),
                 node.hasNonNull("description") ? node.get("description").asText() : "",
                 node.get("price").asDouble(),
-                node.get("count").asInt()
+                node.get("count").asInt(),
+                node.hasNonNull("image") ? node.get("image").asText() : null
             );
 
             Product created = repository.create(input);

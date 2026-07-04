@@ -87,7 +87,8 @@ public class DynamoDbProductRepository implements ProductRepository {
                     "id",          AttributeValue.fromS(id),
                     "title",       AttributeValue.fromS(product.title()),
                     "description", AttributeValue.fromS(product.description()),
-                    "price",       AttributeValue.fromN(String.valueOf(product.price()))
+                    "price",       AttributeValue.fromN(String.valueOf(product.price())),
+                    "image",       AttributeValue.fromS(product.image())
                 ))
                 .build())
             .build();
@@ -106,7 +107,7 @@ public class DynamoDbProductRepository implements ProductRepository {
             .transactItems(putProduct, putStock)
             .build());
 
-        return new Product(id, product.title(), product.description(), product.price(), product.count());
+        return new Product(id, product.title(), product.description(), product.price(), product.count(), product.image());
     }
 
     private Product mapToProduct(Map<String, AttributeValue> item, int count) {
@@ -115,7 +116,8 @@ public class DynamoDbProductRepository implements ProductRepository {
             item.get("title").s(),
             item.containsKey("description") ? item.get("description").s() : "",
             Double.parseDouble(item.get("price").n()),
-            count
+            count,
+            item.containsKey("image") ? item.get("image").s() : null
         );
     }
 }
